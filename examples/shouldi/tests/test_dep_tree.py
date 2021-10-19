@@ -14,6 +14,34 @@ from dffml.df.memory import MemoryOrchestrator
 from dffml.util.asynctestcase import AsyncTestCase
 
 from shouldi.pypi import *
+import sys
+import ast
+import pathlib
+
+
+def get_imports(obj):
+    """
+    Generator yielding all modules imported by file
+    
+    >>> file_path = pathlib.Path(sys.argv[-1])
+    >>> file_contents = file_path.read_text()
+    >>> for module in sorted(
+    ...     set(filter(lambda i: isinstance(i, str), get_imports(ast.parse(file_contents))))
+    ... ):
+    ...     print(module)
+    """
+    if isinstance(obj, ast.Import):
+        for node in obj.names:
+            yield node.name
+    elif isinstance(obj, ast.ImportFrom):
+        yield obj.module
+    elif isinstance(obj, list):
+        for node in obj:
+            yield from get_imports(node)
+    elif hasattr(obj, "body") and isinstance(obj.body, list):
+        yield from get_imports(obj.body)
+
+
 
 
 def remove_package_versions(packages):
